@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "dockerComposeFilePath": "docker-compose.yml",
+  "dockerComposeFileType": "yml",
+  "persistentDirectories": [
+    "mongo1_data",
+    "mongo2_data",
+    "mongo3_data"
+  ],
+  "ports": [27017]
+}

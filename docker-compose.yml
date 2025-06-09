@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  mongo1:
+    image: mongo:8.0
+    container_name: mongo1
+    hostname: mongo1
+    ports:
+      - 27017:27017         # Apenas mongo1 exposto externamente
+    volumes:
+      - mongo1_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_KEYFILE: ${MONGO_KEYFILE}
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "$MONGO_KEYFILE" > /etc/mongo-keyfile && \
+        chmod 400 /etc/mongo-keyfile && \
+        mongod --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all
+
+  mongo2:
+    image: mongo:8.0
+    container_name: mongo2
+    hostname: mongo2
+    # sem portas expostas para mongo2 e mongo3
+    volumes:
+      - mongo2_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_KEYFILE: ${MONGO_KEYFILE}
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "$MONGO_KEYFILE" > /etc/mongo-keyfile && \
+        chmod 400 /etc/mongo-keyfile && \
+        mongod --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all
+  mongo3:
+    image: mongo:8.0
+    container_name: mongo3
+    hostname: mongo3
+    volumes:
+      - mongo3_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_KEYFILE: ${MONGO_KEYFILE}
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "$MONGO_KEYFILE" > /etc/mongo-keyfile && \
+        chmod 400 /etc/mongo-keyfile && \
+        mongod --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all
+
+  mongo-init-replica:
+    image: mongo:8.0
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_KEYFILE: ${MONGO_KEYFILE}
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        sleep 15 && \
+        mongo --host mongo1:27017 -u ${MONGO_INITDB_ROOT_USERNAME} -p ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin <<EOF
+          rs.initiate({
+            _id: "rs0",
+            members: [
+              { _id: 0, host: "mongo1:27017" },
+              { _id: 1, host: "mongo2:27017" },
+              { _id: 2, host: "mongo3:27017" }
+            ]
+          });
+        EOF
+
+volumes:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
