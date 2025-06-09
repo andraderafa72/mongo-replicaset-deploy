@@ -33,3 +33,9 @@ Este projeto configura um Replica Set do MongoDB 8.0 usando Docker Compose, com 
 
 ```text
 mongodb://<root>:<senha>@<host>:27017/?replicaSet=rs0
+
+
+## Arquivos
+
+- `captain-definition`: Arquivo de definições do CapRover
+- `docker-compose.yml`: Definição de containers
